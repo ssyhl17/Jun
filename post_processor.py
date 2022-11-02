@@ -15,20 +15,16 @@ def plot_1D_results(output_paths, plot_column_name,
 					y_axis_title, plot_title):
 	fig, axs = plt.subplots(1, 1, figsize=(20,10))
 	fontsize = 20
-	for this_key in range(len(output_paths)):
+	for this_key in output_paths:
 		this_path = output_paths[this_key]
 		this_df = pd.read_csv(this_path)
 		this_df['Date/Time'] = '2002 ' + this_df['Date/Time']
 		this_df['Date/Time'] = this_df['Date/Time'].apply(eplus_to_datetime)
-		data_st_date = this_df.i;oc[0]['Date/Time']
+		data_st_date = this_df.iloc[0]['Date/Time']
 		data_ed_date = this_df.iloc[-1]['Date/Time']
 		date_list = this_df['Date/Time']
 		this_y = this_df[plot_column_name].values
-		axs.plot(date_list, this_y
-				alpha = 0.7,
-				linestyle = '--',
-				linewidth = 2,
-				label = item)
+		axs.plot(date_list, this_y, linestyle = '--', linewidth = 2, label = this_key)
 	datetime_ax_loc = mdates.HourLocator()  
 	datetime_ax_fmt = mdates.DateFormatter('%H:%M')
 	axs.xaxis.set_major_locator(datetime_ax_loc)
@@ -43,3 +39,4 @@ def plot_1D_results(output_paths, plot_column_name,
 	axs.set_ylabel('Air Temperature (C)',
 				  fontsize = fontsize)
 	axs.legend(fontsize = fontsize)
+	plt.show()
