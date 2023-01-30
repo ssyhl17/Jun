@@ -1,0 +1,351 @@
+import tkinter as tki  # import tkinter
+
+'''
+The outdoor heat load Q = (1.1 * A) + (3.4 * U * A * (Ti - Ta)) + (3.4 * (1 + (0.04 * V) * (Ta + 273)) * (Ti - Ta)), 
+where Q is the outdoor heat load (W), A is the area of the building's exterior walls (m²), U is the thermal conductivity
+of the building's exterior walls (W/m²K), Ti is the indoor temperature (℃), Ta is the outdoor temperature (℃),
+and V is the outdoor humidity (kg/kg).
+
+Q = U * A * (T1 - T2)/d
+
+Q is the heat transfer rate, U is the heat transfer coefficient, A is the heat transfer area, T1 is the temperature at 
+one end, and T2 is the temperature at the other end.
+Without windows, the following formula can be derived without considering the thickness of the material:
+
+Ti=Ti+(Ta-Ti)·λ·A/(Cp·V·n)
+
+Assuming the house is 100 square meters, V is set as 100 m^2, and A is approximately 200-400, with 300 taken here.
+
+Ti=Ti+(Ta-Ti)·λ·300/(Cp·100·n)
+
+Translation: Q is the heat transfer rate, U is the heat transfer coefficient, A is the heat transfer area, 
+T1 is the temperature at one end, and T2 is the temperature at the other end. Without windows, the following formula 
+can be derived without considering the thickness of the material: Ti=Ti+(Ta-Ti)·λ·A/(Cp·V·n), assuming the house is 100 
+square meters, V is set as 100 m^2, and A is approximately 200-400, with 300 taken here. Ti=Ti+(Ta-Ti)·λ·300/(Cp·100·n).
+
+'''
+
+
+def enterData(tout_entry, peopleEntry, U_entry):
+    global to
+    global n
+    global U
+    to = float(tout_entry.get())
+    n = int(peopleEntry.get())
+    U = float(U_entry.get())
+    if U != 0:
+        resultMaterialLabel.config(text="Select the material —>")
+
+
+# 0,0
+def inputValue(bgcolor):
+    frameInput = tki.Frame(root, bg=bgcolor, highlightbackground="blue", highlightcolor="red", bd=2, takefocus=True)
+    frameInput.grid(row=1, column=0, pady=10)
+
+    global UEntryText
+    UEntryText = tki.StringVar()
+
+    U_label = tki.Label(frameInput, text="Enter the U value:", bg=bgcolor)
+    U_entry = tki.Entry(frameInput, exportselection=True)
+    U_label.grid(row=0, column=0)
+    U_entry.grid(row=0, column=1)
+
+    tout_label = tki.Label(frameInput, text="Enter the temp outside:", bg=bgcolor)
+    tout_entry = tki.Entry(frameInput)
+    tout_label.grid(row=1, column=0)
+    tout_entry.grid(row=1, column=1)
+
+    # resultLabel = tki.Label(root, text="Press \"calculate\" after entering you number")
+    # resultLabel.grid(row=2, column=0, columnspan=2)
+
+    enterButton = tki.Button(frameInput, text="Enter", command=lambda: (enterData(tout_entry, peopleEntry, U_entry)),
+                             bg=bgcolor,
+                             bd=0)
+    enterButton.grid(row=3, column=0, columnspan=2, pady=10)
+
+    peopleLabel = tki.Label(frameInput, text="How many people in the house?", bg=bgcolor)
+    peopleLabel.grid(row=2, column=0)
+
+    peopleEntry = tki.Entry(frameInput)
+    peopleEntry.grid(row=2, column=1)
+
+    return U_entry, tout_entry, peopleEntry  # , resultLabel
+
+
+def button_click(button_name):
+    # Storing thermal conductivity and heat capacity data in a dictionary
+    dicMaterialThermalConductivity = {
+        "brick": 0.72,
+        "concrete": 1.15,
+        "wood": 0.15,
+        "doubleGlazing": 0.5,
+        "paperFaced": 0.04
+    }
+
+    dicMaterialHeatCapacity = {
+        "brick": 840,
+        "concrete": 830,
+        "wood": 1700,
+        "doubleGlazing": 840,
+        "paperFaced": 1000
+    }
+
+    global materialNum
+    global lbd
+    global cp
+    if button_name == "a":
+        materialNum = 1
+        lbd = dicMaterialThermalConductivity["brick"]
+        cp = dicMaterialHeatCapacity["brick"]
+        resultMaterialLabel.config(text="Thermal conductivity：" + str(lbd) + "\nHeat capacity:" + str(cp))
+    elif button_name == "b":
+        materialNum = 2
+        lbd = dicMaterialThermalConductivity["concrete"]
+        cp = dicMaterialHeatCapacity["concrete"]
+        resultMaterialLabel.config(text="Thermal conductivity：" + str(lbd) + "\nHeat capacity:" + str(cp))
+    elif button_name == "c":
+        materialNum = 3
+        lbd = dicMaterialThermalConductivity["wood"]
+        cp = dicMaterialHeatCapacity["wood"]
+        resultMaterialLabel.config(text="Thermal conductivity：" + str(lbd) + "\nHeat capacity:" + str(cp))
+    elif button_name == "d":
+        materialNum = 4
+        lbd = dicMaterialThermalConductivity["doubleGlazing"]
+        cp = dicMaterialHeatCapacity["doubleGlazing"]
+        resultMaterialLabel.config(text="Thermal conductivity：" + str(lbd) + "\nHeat capacity:" + str(cp))
+    elif button_name == "e":
+        materialNum = 5
+        lbd = dicMaterialThermalConductivity["paperFaced"]
+        cp = dicMaterialHeatCapacity["paperFaced"]
+        resultMaterialLabel.config(text="Thermal conductivity：" + str(lbd) + "\nHeat capacity:" + str(cp))
+
+    cauculateTi()
+
+
+def calculateU():
+    # Get the value in the text box.
+    k = float(k_entry.get())
+    c = float(c_entry.get())
+    q = float(q_entry.get())
+    # 计算U值
+    u = q / (c * k)
+    # Update the value of the tag.
+    UEntryText.set(u)
+
+    u_label.config(text="U Value is: {:.2f}".format(u))
+
+
+def cauculateTi():
+    """
+    Ti=Ti+(Ta-Ti)·λ·300/(Cp·100·n)
+    Ti = Ti + (Ta - Ti)·p
+    Q = (1.1 * A) + (3.4 * U * A * (Ti - Ta)) + (3.4 * (1 + (0.04 * V) * (Ta + 273)) * (Ti - Ta)
+    =330+3.4*lbd（Ti - Ta）+ (13.6*Ta + 3,716.2) * (Ti - Ta)
+    =330+ (Ti - Ta)*（3.4*lbd+13.6*Ta + 3,716.2）
+    Q= U * A * (Ti - Ta)= lbd* (Ti - Ta)
+    """
+    global lbd
+    global cp
+    global n
+    global to
+    global U
+    print(lbd, cp, n, to, U)
+    # The average metabolic rate W of the human body is about 70-100 W/person.
+    # This refers to the metabolic rate of an adult in a resting state,
+    # which indicates the amount of heat consumed by the body. This value may vary depending on factors such as age,
+    # gender, weight and level of physical activity.
+    W = 85
+    C = n * W / 360
+
+    Q = 1000
+    k = U * 300
+    Ti = (Q / k) + to - C
+    print(Ti)
+
+    # final reslut
+    finalResult = Ti
+    labelFinalResult.config(text="Final result is: " + str(finalResult) + "degrees")
+    '''
+    
+    '''
+
+
+def selectWhichMaterial(bgcolor):
+    global materialVar
+    materialVar = tki.IntVar()
+    global n
+
+    brickButton = tki.Radiobutton(frameMaterial, text="brick", variable=materialVar, value=1,
+                                  command=lambda: button_click("a"), bg=bgcolor)
+    brickButton.grid(row=1, column=5, sticky="W")
+
+    concreteButton = tki.Radiobutton(frameMaterial, text="concrete", variable=materialVar, value=2,
+                                     command=lambda: button_click("b"), bg=bgcolor)
+    concreteButton.grid(row=2, column=5, sticky="W")
+
+    woodButton = tki.Radiobutton(frameMaterial, text="wood", variable=materialVar, value=3,
+                                 command=lambda: button_click("c"), bg=bgcolor)
+    woodButton.grid(row=3, column=5, sticky="W")
+
+    doubleGlazingButton = tki.Radiobutton(frameMaterial, text="doubleGlazing", variable=materialVar, value=4,
+                                          command=lambda: button_click("d"), bg=bgcolor)
+    doubleGlazingButton.grid(row=4, column=5, sticky="W")
+
+    paperFacedButton = tki.Radiobutton(frameMaterial, text="paperFaced", variable=materialVar, value=5,
+                                       command=lambda: button_click("e"), bg=bgcolor)
+    paperFacedButton.grid(row=5, column=5, sticky="W")
+
+    materialNum = materialVar.get()
+    return materialNum
+
+
+def hintWindow():
+    # Create a window object:
+    hint = tki.Toplevel(root)
+    # name it
+    hint.title("Hint")
+    # use Tkinter's geometry() function to set the size of the window
+    # hint.geometry("500x400")
+
+    labelHint1 = tki.Label(hint, text="1. fill the outside temp in the first box", anchor="w")
+    labelHint2 = tki.Label(hint, text="2. fill the number of the people in the second box", anchor="w")
+    labelHint3 = tki.Label(hint, text="3. press Enter button", anchor="w")
+    labelHint4 = tki.Label(hint, text="4. select the material that the house used", anchor="w")
+    labelHint5 = tki.Label(hint, text="5. the result appears", anchor="w")
+    labelHintData = tki.Label(hint, text="The following are thermal conductivity and thermal capacity data of "
+                                         "some common building materials.："
+                                         "  - brick：λ=0.72 W/m·K，Cp=840 J/kg·K"
+                                         "  - concreate：λ=1.15 W/m·K，Cp=830 J/kg·K"
+                                         "  - wood：λ=0.15 W/m·K，Cp=1700 J/kg·K"
+                                         "  - double Glazing：λ=0.5 W/m·K，Cp=840 J/kg·K"
+                                         "  - paper-faced：λ=0.04 W/m·K，Cp=1000 J/kg·K")
+    labelHintQ = tki.Label(hint,
+                           text="Q = U x A x (Ti - Ta), where U is the thermal conductivity of the building's "
+                                "exterior wall, A is the area of the exterior wall, Ti is the indoor temperature, "
+                                "and Ta is the outdoor temperature. Common U values are generally between 0.2 W/m²K "
+                                "and 2.5 W/m²K, depending on the material and quality of the exterior wall.")
+
+    labelHint1.grid(sticky="W", padx=8)
+    labelHint2.grid(sticky="W", padx=8)
+    labelHint3.grid(sticky="W", padx=8)
+    labelHint4.grid(sticky="W", padx=8)
+    labelHint5.grid(sticky="W", padx=8)
+    labelHintQ.grid(sticky="W", padx=8)
+    labelHintData.grid(sticky="W", padx=8)
+
+    exitButton = tki.Button(hint, text="EXIT", command=hint.destroy)
+    exitButton.grid()
+
+
+def hint(bgcolor):
+    # if you dont know how to use the software, press this button
+    frameHint = tki.Frame(root, bd=30, bg=bgcolor, highlightbackground="blue", highlightcolor="red", takefocus=True)
+    frameHint.grid(row=4, column=0, columnspan=2, pady=10)
+
+    userHintLabel = tki.Label(frameHint, text="have trouble using the software?\nPress this button!", bg=bgcolor)
+    userHintLabel.grid(row=8, column=0)
+    # create a new window to make a hint
+    userHintBotton = tki.Button(frameHint, text="HINT", bg=bgcolor, bd=0, command=hintWindow)
+    userHintBotton.grid(row=8, column=1)
+
+
+
+
+# exit the UI interface and exit the progamme
+def destoryWindow():
+    root.destroy()
+
+
+def destoryHintWindow():
+    print("exiting hint window")
+
+
+def exit(rowNum):
+    exitButton = tki.Button(root, text="EXIT", command=destoryWindow)
+    exitButton.grid(row=rowNum, column=0, columnspan=2, pady=10)
+
+
+def UWindow():
+    global k_entry
+    global c_entry
+    global q_entry
+    global u_label
+    U = tki.Tk()
+    U.title("U value calculator")
+    # create a text box
+    k_label = tki.Label(U, text="Thermal conductivity(W/m2·K)")
+    k_label.pack()
+    k_entry = tki.Entry(U)
+    k_entry.pack()
+
+    c_label = tki.Label(U, text="Heat capacity(J/kg·K)")
+    c_label.pack()
+    c_entry = tki.Entry(U)
+    c_entry.pack()
+
+    q_label = tki.Label(U, text="heat flow(W)")
+    q_label.pack()
+    q_entry = tki.Entry(U)
+    q_entry.pack()
+    # create the button
+    calculate_button = tki.Button(U, text="calculate U value", command=calculateU)
+    calculate_button.pack()
+    # create the label
+    u_label = tki.Label(U, text="U value is:")
+    u_label.pack()
+
+    exitButton = tki.Button(U, text="EXIT", command=U.destroy)
+    exitButton.pack()
+
+
+def UHint(bgcolor):
+    frameUHint = tki.Frame(root)
+
+    frameUHint = tki.Frame(root, bd=30, bg=bgcolor, highlightbackground="blue", highlightcolor="red", takefocus=True)
+    frameUHint.grid(row=0, column=0, columnspan=2, pady=10)
+
+    userHintLabel = tki.Label(frameUHint, text="Don't know the U value?\nI have a calculator just for you", bg=bgcolor)
+    userHintLabel.grid(row=8, column=0)
+
+    userHintBotton = tki.Button(frameUHint, text="U!", bg=bgcolor, bd=0, command=UWindow)
+    userHintBotton.grid(row=8, column=1)
+
+
+if __name__ == '__main__':
+    # create a window object
+    root = tki.Tk()
+    # name it
+    root.title("A Data Processor")
+    # use Tkinter's geometry() function to set the size of the window
+    # root.geometry("900x400")
+
+    inputColor = "#f4cac3"
+    hintColor = "#c2cd72"
+    materialColor = "#abb581"
+    UHintColor = "#dd8f8d"
+
+    returnInputtedValue = inputValue(inputColor)
+    # save the temperature outside
+    # ti = returnInputtedValue[0]
+    to = returnInputtedValue[0]
+    n = 0
+    lbd = 0
+    cp = 0
+
+    UHint(UHintColor)
+
+    frameMaterial = tki.Frame(root, bg=materialColor, bd=60, takefocus=True)
+    frameMaterial.grid(row=2, column=0, pady=10, padx=5)
+    # text hint
+    resultMaterialLabel = tki.Label(frameMaterial, text="! Enter the data above first !", bg=materialColor)
+    resultMaterialLabel.grid(row=3, column=0, sticky="W")
+
+    materialNum = selectWhichMaterial(materialColor)
+
+    labelFinalResult = tki.Label(root)
+    labelFinalResult.grid(row=9, column=0)
+
+    hint(hintColor)
+    exit(10)
+    # make window go to cycle
+    root.mainloop()
